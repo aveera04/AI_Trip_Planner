@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,29 +9,110 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Sparkles, Clock, CheckCircle, XCircle, Copy, Download, Share } from "lucide-react";
+import { MapPin, Sparkles, Clock, CheckCircle, XCircle, Copy, Download, Share, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface TravelResponse {
-  answer: string;
-}
+import { apiService, type TravelPlanResponse } from "@/services/api";
+import { useQueryHistory } from "@/hooks/useQueryHistory";
+import QueryHistory from "@/components/travel/QueryHistory";
+import ExportMenu from "@/components/travel/ExportMenu";
+import "highlight.js/styles/github.css"; // Import highlight.js theme
 
 const TravelPlannerForm = () => {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<TravelResponse | null>(null);
+  const [response, setResponse] = useState<TravelPlanResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(true);
+  const [requestTimestamp, setRequestTimestamp] = useState<Date | null>(null);
+  const [processingTime, setProcessingTime] = useState<number | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState("Planning your perfect trip...");
+  const [currentQueryId, setCurrentQueryId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { addQuery, updateQueryResponse } = useQueryHistory();
 
-  const exampleQueries = [
-    "Plan a 5-day romantic trip to Paris with fine dining and museums",
-    "Budget-friendly 3-day Tokyo adventure with street food and temples", 
-    "Family vacation to Orlando with kids, theme parks and activities",
-    "Adventure trip to New Zealand for 7 days with hiking and nature"
+  const loadingMessages = [
+    "Planning your perfect trip...",
+    "Analyzing destinations and attractions...", 
+    "Crafting your personalized itinerary...",
+    "Finding the best activities for you...",
+    "Optimizing travel routes and schedules...",
+    "Adding local insights and recommendations..."
   ];
 
-  const handleExampleClick = (example: string) => {
-    setQuery(example);
+  const exampleQueries = [
+    {
+      category: "Romance",
+      query: "Plan a 5-day romantic trip to Paris with fine dining and museums",
+      icon: "💕"
+    },
+    {
+      category: "Adventure",
+      query: "Budget-friendly 3-day Tokyo adventure with street food and temples",
+      icon: "🗾"
+    },
+    {
+      category: "Family",
+      query: "Family vacation to Orlando with kids, theme parks and activities",
+      icon: "👨‍👩‍👧‍👦"
+    },
+    {
+      category: "Nature",
+      query: "Adventure trip to New Zealand for 7 days with hiking and nature",
+      icon: "🏔️"
+    },
+    {
+      category: "Cultural",
+      query: "Cultural tour of Italy for 10 days with art, history, and cuisine",
+      icon: "🏛️"
+    },
+    {
+      category: "Luxury",
+      query: "Luxury beach vacation in Maldives for a week with spa and water sports",
+      icon: "🏖️"
+    }
+  ];
+
+  // Check connection status on component mount and periodically
+  useEffect(() => {
+    const checkConnection = async () => {
+      const connected = await apiService.testConnection();
+      setIsConnected(connected);
+    };
+
+    // Check immediately
+    checkConnection();
+
+    // Check every 30 seconds if not connected
+    const interval = setInterval(() => {
+      if (!isConnected) {
+        checkConnection();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
+  // Cycle through loading messages during processing
+  useEffect(() => {
+    if (!isLoading) return;
+
+    let messageIndex = 0;
+    const interval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % loadingMessages.length;
+      setLoadingMessage(loadingMessages[messageIndex]);
+    }, 3000); // Change message every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [isLoading, loadingMessages]);
+
+  const handleExampleClick = (example: { category: string; query: string; icon: string }) => {
+    setQuery(example.query);
+  };
+
+  const handleHistorySelect = (selectedQuery: string) => {
+    setQuery(selectedQuery);
+    // Optionally auto-submit if you want immediate results
+    // setTimeout(() => handleSubmit(), 100);
   };
 
   const handleSubmit = async () => {
@@ -44,22 +128,36 @@ const TravelPlannerForm = () => {
     setIsLoading(true);
     setError(null);
     setResponse(null);
+    setProcessingTime(null);
+    
+    const startTime = new Date();
+    setRequestTimestamp(startTime);
+
+    // Add query to history immediately
+    const queryId = addQuery(query.trim());
+    setCurrentQueryId(queryId);
 
     try {
-      const response = await fetch('http://localhost:8000/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ question: query }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Test connection first
+      const connectionOk = await apiService.testConnection();
+      setIsConnected(connectionOk);
+      
+      if (!connectionOk) {
+        throw new Error('Unable to connect to the travel planning service. Please check your connection.');
       }
 
-      const data: TravelResponse = await response.json();
+      // Generate travel plan using API service
+      const data = await apiService.generateTravelPlan({ question: query });
+      const endTime = new Date();
+      const duration = endTime.getTime() - startTime.getTime();
+      setProcessingTime(duration);
       setResponse(data);
+
+      // Update history with response
+      updateQueryResponse(queryId, {
+        answer: data.answer,
+        processingTime: duration
+      });
       
       toast({
         title: "Travel plan generated!",
@@ -68,6 +166,7 @@ const TravelPlannerForm = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
+      setIsConnected(false);
       
       toast({
         title: "Failed to generate travel plan",
@@ -89,9 +188,62 @@ const TravelPlannerForm = () => {
     }
   };
 
+  const saveToFile = () => {
+    if (response?.answer) {
+      const blob = new Blob([response.answer], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `travel-plan-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Travel plan saved!",
+        description: "Your itinerary has been downloaded as a text file.",
+      });
+    }
+  };
+
+  const shareViaWeb = async () => {
+    if (response?.answer && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My AI Travel Plan',
+          text: response.answer,
+        });
+        toast({
+          title: "Shared successfully!",
+          description: "Your travel plan has been shared.",
+        });
+      } catch (err) {
+        // Fallback to clipboard if sharing fails
+        copyToClipboard();
+      }
+    } else {
+      // Fallback to clipboard for browsers without Web Share API
+      copyToClipboard();
+    }
+  };
+
+  const handleRetry = async () => {
+    if (query.trim()) {
+      // Add small delay to show retry action
+      setError(null);
+      toast({
+        title: "Retrying...",
+        description: "Attempting to reconnect and generate your travel plan.",
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      handleSubmit();
+    }
+  };
+
   return (
     <section className="py-20 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="font-playfair text-4xl font-bold text-foreground mb-4">
             Plan Your Perfect <span className="text-gradient-ocean">Journey</span>
@@ -101,29 +253,58 @@ const TravelPlannerForm = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Query History Sidebar */}
+          <div className="lg:order-first">
+            <QueryHistory 
+              onSelectQuery={handleHistorySelect}
+              currentQuery={query}
+            />
+          </div>
+
+          {/* Main Content - Input Form */}
+          <div className="lg:col-span-2 space-y-8">
           {/* Input Form */}
           <Card className="shadow-travel-large border-0 bg-gradient-card backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Sparkles className="w-6 h-6 text-primary" />
                 Describe Your Dream Trip
+                {/* Connection Status Indicator */}
+                <div className="ml-auto flex items-center gap-1">
+                  {isConnected ? (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <Wifi className="w-4 h-4" />
+                      <span className="text-xs font-normal">Connected</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-red-600">
+                      <WifiOff className="w-4 h-4" />
+                      <span className="text-xs font-normal">Disconnected</span>
+                    </div>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Example Queries */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium">💡 Try these examples:</Label>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {exampleQueries.map((example, index) => (
-                    <Badge 
+                    <div
                       key={index}
-                      variant="outline" 
-                      className="p-3 h-auto text-left cursor-pointer hover:bg-primary hover:text-white transition-all text-wrap"
+                      className="group p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200"
                       onClick={() => handleExampleClick(example)}
                     >
-                      {example}
-                    </Badge>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">{example.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm text-primary mb-1">{example.category}</div>
+                          <div className="text-sm text-gray-600 group-hover:text-gray-800">{example.query}</div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -183,7 +364,7 @@ const TravelPlannerForm = () => {
             </CardContent>
           </Card>
 
-          {/* Response Display */}
+          {/* Response Display Card */}
           <Card className="shadow-travel-large border-0 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
@@ -194,16 +375,22 @@ const TravelPlannerForm = () => {
                 Travel Plan
               </CardTitle>
               {response && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={copyToClipboard}>
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm">
+                  
+                  <ExportMenu 
+                    travelPlan={{
+                      answer: response.answer,
+                      query: response.query || query,
+                      timestamp: response.timestamp,
+                      processingTime: processingTime || undefined
+                    }}
+                  />
+                  
+                  <Button variant="outline" size="sm" onClick={shareViaWeb}>
                     <Share className="w-4 h-4 mr-2" />
                     Share
                   </Button>
@@ -213,42 +400,133 @@ const TravelPlannerForm = () => {
             <CardContent>
               {isLoading && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                  <h3 className="text-lg font-medium mb-2">Planning your perfect trip...</h3>
-                  <p className="text-muted-foreground">Our AI is crafting a personalized itinerary just for you</p>
+                  <div className="relative mb-6">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-pulse text-2xl">✈️</div>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 text-primary">{loadingMessage}</h3>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>AI is working</span>
+                    <div className="flex gap-1">
+                      <span className="animate-bounce delay-0">.</span>
+                      <span className="animate-bounce delay-150">.</span>
+                      <span className="animate-bounce delay-300">.</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    This may take a few moments while we craft your perfect itinerary
+                  </div>
                 </div>
               )}
 
               {error && (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Oops!</strong> {error}
-                  </AlertDescription>
-                </Alert>
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Oops!</strong> {error}
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {/* Retry Button */}
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={handleRetry} 
+                      variant="outline" 
+                      className="flex items-center gap-2"
+                      disabled={isLoading}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {response && (
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <h3 className="font-semibold text-green-900">🌍 Your AI-Generated Travel Plan</h3>
+                <div className="space-y-6">
+                  {/* Header with Metadata - Enhanced Streamlit Style */}
+                  <div className="bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 p-6 rounded-xl border-2 border-green-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <h3 className="text-xl font-bold text-green-900">🌍 AI Travel Plan</h3>
                     </div>
-                    <p className="text-sm text-green-700">
-                      Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-600">Generated:</span>
+                        <span className="text-gray-800">
+                          {requestTimestamp ? requestTimestamp.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          }) : 'N/A'}
+                        </span>
+                        <span className="text-gray-600 text-xs">
+                          at {requestTimestamp ? requestTimestamp.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-600">Processing Time:</span>
+                        <span className="text-gray-800">
+                          {processingTime ? `${(processingTime / 1000).toFixed(1)}s` : 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-600">Created by:</span>
+                        <span className="text-gray-800">AI Travel Agent</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-green-300">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-600 mb-2">Your Query:</span>
+                        <div className="bg-white p-3 rounded-lg border italic text-gray-700">
+                          "{response.query || query}"
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="prose prose-sm max-w-none bg-white p-6 rounded-lg border">
-                    <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                      {response.answer}
+                  {/* Markdown Rendered Content */}
+                  <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                    <div className="p-6">
+                      <div className="prose prose-lg prose-slate max-w-none markdown-content">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
+                          components={{
+                            h1: ({ children }) => <h1 className="text-3xl font-bold text-gray-900 mb-6 border-b-2 border-blue-200 pb-3">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-8">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">{children}</h3>,
+                            p: ({ children }) => <p className="text-gray-700 leading-relaxed mb-4">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside space-y-2 mb-4 ml-4">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside space-y-2 mb-4 ml-4">{children}</ol>,
+                            li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                            strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({ children }) => <em className="italic text-gray-600">{children}</em>,
+                            blockquote: ({ children }) => <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-4">{children}</blockquote>,
+                            code: ({ children }) => <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">{children}</code>,
+                            pre: ({ children }) => <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm">{children}</pre>
+                          }}
+                        >
+                          {response.answer}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
 
-                  <Alert>
-                    <AlertDescription>
-                      ⚠️ This travel plan was generated by AI. Please verify all information, 
+                  {/* Footer Disclaimer */}
+                  <Alert className="bg-yellow-50 border-yellow-200">
+                    <AlertDescription className="text-yellow-800">
+                      ⚠️ <strong>Important:</strong> This travel plan was generated by AI. Please verify all information, 
                       especially prices, operating hours, and travel requirements before your trip.
                     </AlertDescription>
                   </Alert>
@@ -264,8 +542,10 @@ const TravelPlannerForm = () => {
               )}
             </CardContent>
           </Card>
-        </div>
-      </div>
+          
+          </div> {/* End of main content */}
+        </div> {/* End of grid */}
+      </div> {/* End of max-w-7xl container */}
     </section>
   );
 };
