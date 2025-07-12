@@ -14,9 +14,10 @@ SYSTEM_PROMPT = SystemMessage(
     - Recommended restaurants with prices around the place
     - Activities around the place with details
     - Mode of transportations available in the place with details
-    - Detailed cost breakdown
+    - Detailed cost breakdown using Charts
     - Per Day expense budget approximately
-    - Weather details
+    - Weather details date wise
+    - Recommended perfect time to visit the place
     
     Use the available tools to gather information and make detailed cost breakdowns.
     Provide everything in one comprehensive response formatted in clean Markdown.

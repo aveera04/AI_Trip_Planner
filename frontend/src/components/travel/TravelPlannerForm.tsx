@@ -17,7 +17,13 @@ import QueryHistory from "@/components/travel/QueryHistory";
 import ExportMenu from "@/components/travel/ExportMenu";
 import "highlight.js/styles/github.css"; // Import highlight.js theme
 
-const TravelPlannerForm = () => {
+interface TravelPlannerFormProps {
+  initialQuery?: string;
+  autoSubmit?: boolean;
+  onQueryProcessed?: () => void;
+}
+
+const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProcessed }: TravelPlannerFormProps) => {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<TravelPlanResponse | null>(null);
@@ -104,6 +110,31 @@ const TravelPlannerForm = () => {
 
     return () => clearInterval(interval);
   }, [isLoading, loadingMessages]);
+
+  // Handle initial query from hero section
+  useEffect(() => {
+    if (initialQuery && initialQuery !== query) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
+
+  // Handle auto-submission from hero section
+  useEffect(() => {
+    const submitQuery = async () => {
+      if (autoSubmit && initialQuery && !isLoading && query === initialQuery) {
+        // Small delay to ensure the UI has updated
+        setTimeout(() => {
+          handleSubmit();
+        }, 500);
+        
+        if (onQueryProcessed) {
+          onQueryProcessed();
+        }
+      }
+    };
+
+    submitQuery();
+  }, [autoSubmit, initialQuery, query, isLoading]);
 
   const handleExampleClick = (example: { category: string; query: string; icon: string }) => {
     setQuery(example.query);

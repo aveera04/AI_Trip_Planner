@@ -1,9 +1,59 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Map, Plane } from "lucide-react";
 import heroBeach from "@/assets/hero-beach.jpg";
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onPlanTrip?: (destination: string, days: string) => void;
+}
+
+const HeroSection = ({ onPlanTrip }: HeroSectionProps) => {
+  const [destination, setDestination] = useState("");
+  const [days, setDays] = useState("");
+
+  const handlePlanTrip = () => {
+    if (destination.trim() && days.trim() && onPlanTrip) {
+      onPlanTrip(destination.trim(), days.trim());
+      // Clear the form after submission
+      setDestination("");
+      setDays("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePlanTrip();
+    }
+  };
+
+  const handleQuickAction = (type: string) => {
+    let destination = "";
+    let days = "";
+    
+    switch (type) {
+      case "Weekend Getaway":
+        destination = "nearby city";
+        days = "2";
+        break;
+      case "Adventure Travel":
+        destination = "mountain destination";
+        days = "7";
+        break;
+      case "Romantic Escape":
+        destination = "romantic city";
+        days = "3";
+        break;
+      case "Family Vacation":
+        destination = "family-friendly destination";
+        days = "5";
+        break;
+    }
+    
+    if (onPlanTrip) {
+      onPlanTrip(destination, days);
+    }
+  };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -44,13 +94,25 @@ const HeroSection = () => {
             <div className="flex flex-col md:flex-row gap-4">
               <Input 
                 placeholder="Where do you want to go?"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="flex-1 bg-white/20 border-white/30 text-white placeholder:text-white/70 h-12 rounded-xl"
               />
               <Input 
                 placeholder="How many days?"
+                value={days}
+                onChange={(e) => setDays(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="bg-white/20 border-white/30 text-white placeholder:text-white/70 h-12 rounded-xl md:w-40"
               />
-              <Button variant="hero" size="lg" className="h-12 px-8">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="h-12 px-8"
+                onClick={handlePlanTrip}
+                disabled={!destination.trim() || !days.trim()}
+              >
                 Plan My Trip
                 <Plane className="w-5 h-5 ml-2" />
               </Button>
@@ -59,10 +121,10 @@ const HeroSection = () => {
           
           {/* Quick Actions */}
           <div className="flex flex-wrap justify-center gap-3 mt-8">
-            <Button variant="glass" size="sm">Weekend Getaway</Button>
-            <Button variant="glass" size="sm">Adventure Travel</Button>
-            <Button variant="glass" size="sm">Romantic Escape</Button>
-            <Button variant="glass" size="sm">Family Vacation</Button>
+            <Button variant="glass" size="sm" onClick={() => handleQuickAction("Weekend Getaway")}>Weekend Getaway</Button>
+            <Button variant="glass" size="sm" onClick={() => handleQuickAction("Adventure Travel")}>Adventure Travel</Button>
+            <Button variant="glass" size="sm" onClick={() => handleQuickAction("Romantic Escape")}>Romantic Escape</Button>
+            <Button variant="glass" size="sm" onClick={() => handleQuickAction("Family Vacation")}>Family Vacation</Button>
           </div>
         </div>
       </div>
