@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# AI Travel Planner Frontend
 
-## Project info
+## Project Description
 
-**URL**: https://lovable.dev/projects/2e8d9e02-0d93-4e3a-8c57-9f441ec5f757
+An AI-powered travel planning application built with React, TypeScript, and Vite. This frontend provides a beautiful, intuitive interface for users to plan their perfect trips with the help of artificial intelligence.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- 🌍 AI-powered travel planning
+- 🎨 Modern, responsive UI with Tailwind CSS
+- 📱 Mobile-friendly design
+- 🔄 Real-time API integration
+- 📊 Query history and management
+- 💾 Export and share travel plans
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2e8d9e02-0d93-4e3a-8c57-9f441ec5f757) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (v16 or later)
+- npm or yarn package manager
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Step 1: Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Step 2: Navigate to the project directory
+cd AI_Trip_Planner/frontend
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install the necessary dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Your application will be available at `http://localhost:8081`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+frontend/
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── pages/         # Page components
+│   ├── hooks/         # Custom React hooks
+│   ├── services/      # API services
+│   ├── types/         # TypeScript type definitions
+│   └── assets/        # Static assets
+├── public/            # Public assets
+└── package.json       # Dependencies and scripts
+```
 
-This project is built with:
+## Technologies Used
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **State Management**: React hooks + Context API
+- **HTTP Client**: Fetch API with custom service layer
+- **Code Quality**: ESLint + TypeScript
 
-## How can I deploy this project?
+## Backend Integration
 
-Simply open [Lovable](https://lovable.dev/projects/2e8d9e02-0d93-4e3a-8c57-9f441ec5f757) and click on Share -> Publish.
+This frontend connects to a FastAPI backend running on `http://localhost:8000`. Make sure the backend server is running for full functionality.
 
-## Can I connect a custom domain to my Lovable project?
+## Contributing
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

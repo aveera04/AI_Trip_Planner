@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Sparkles, Clock, CheckCircle, XCircle, Copy, Download, Share, Wifi, WifiOff } from "lucide-react";
+import { MapPin, Sparkles, Clock, CheckCircle, XCircle, Copy, Download, Share, Wifi, WifiOff, Maximize, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService, type TravelPlanResponse } from "@/services/api";
 import { useQueryHistory } from "@/hooks/useQueryHistory";
@@ -33,6 +33,7 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
   const [processingTime, setProcessingTime] = useState<number | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("Planning your perfect trip...");
   const [currentQueryId, setCurrentQueryId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const { addQuery, updateQueryResponse } = useQueryHistory();
 
@@ -272,6 +273,62 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
     }
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const closeFullscreen = () => {
+    setIsFullscreen(false);
+  };
+
+  // Fullscreen Modal Component
+  const FullscreenModal = ({ children }: { children: React.ReactNode }) => {
+    if (!isFullscreen) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 bg-white overflow-hidden">
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              <h2 className="text-lg font-semibold">Travel Plan - Full Screen</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                <Copy className="w-4 h-4 mr-2" />
+                Copy
+              </Button>
+              <ExportMenu 
+                travelPlan={{
+                  answer: response?.answer || "",
+                  query: response?.query || query,
+                  timestamp: response?.timestamp,
+                  processingTime: processingTime || undefined
+                }}
+              />
+              <Button variant="outline" size="sm" onClick={shareViaWeb}>
+                <Share className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+              <Button variant="outline" size="sm" onClick={closeFullscreen}>
+                <X className="w-4 h-4 mr-2" />
+                Close
+              </Button>
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div className="max-w-4xl mx-auto">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <section className="py-20 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto">
@@ -407,6 +464,10 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
               </CardTitle>
               {response && (
                 <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+                    <Maximize className="w-4 h-4 mr-2" />
+                    Full Screen
+                  </Button>
                   <Button variant="outline" size="sm" onClick={copyToClipboard}>
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
@@ -428,7 +489,7 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
                 </div>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-h-[600px] overflow-y-auto">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="relative mb-6">
@@ -525,27 +586,146 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
                       </div>
                     </div>
                   </div>
-                  
                   {/* Markdown Rendered Content */}
                   <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
                     <div className="p-6">
-                      <div className="prose prose-lg prose-slate max-w-none markdown-content">
+                      <div className="prose prose-lg prose-slate max-w-none markdown-content relative">
+                        {/* Decorative background pattern */}
+                        <div className="absolute inset-0 opacity-5 pointer-events-none">
+                          <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full blur-3xl"></div>
+                          <div className="absolute bottom-4 left-4 w-24 h-24 bg-gradient-to-br from-green-200 to-blue-200 rounded-full blur-2xl"></div>
+                        </div>
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           rehypePlugins={[rehypeHighlight]}
                           components={{
-                            h1: ({ children }) => <h1 className="text-3xl font-bold text-gray-900 mb-6 border-b-2 border-blue-200 pb-3">{children}</h1>,
-                            h2: ({ children }) => <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-8">{children}</h2>,
-                            h3: ({ children }) => <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">{children}</h3>,
-                            p: ({ children }) => <p className="text-gray-700 leading-relaxed mb-4">{children}</p>,
-                            ul: ({ children }) => <ul className="list-disc list-inside space-y-2 mb-4 ml-4">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal list-inside space-y-2 mb-4 ml-4">{children}</ol>,
-                            li: ({ children }) => <li className="text-gray-700">{children}</li>,
-                            strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                            em: ({ children }) => <em className="italic text-gray-600">{children}</em>,
-                            blockquote: ({ children }) => <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-4">{children}</blockquote>,
-                            code: ({ children }) => <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">{children}</code>,
-                            pre: ({ children }) => <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm">{children}</pre>
+                            h1: ({ children }) => (
+                              <div className="relative mb-8 mt-6">
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl"></div>
+                                <h1 className="relative text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent p-6 text-center">
+                                  {children}
+                                </h1>
+                              </div>
+                            ),
+                            h2: ({ children }) => (
+                              <div className="flex items-center gap-3 mb-6 mt-10">
+                                <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                                <h2 className="text-2xl font-bold text-gray-800 flex-1 border-b border-gray-200 pb-2">
+                                  {children}
+                                </h2>
+                                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+                              </div>
+                            ),
+                            h3: ({ children }) => (
+                              <div className="flex items-center gap-2 mb-4 mt-8">
+                                <div className="w-1.5 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                                <h3 className="text-xl font-semibold text-gray-700 bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-lg flex-1">
+                                  {children}
+                                </h3>
+                              </div>
+                            ),
+                            h4: ({ children }) => (
+                              <h4 className="text-lg font-semibold text-gray-600 mb-3 mt-6 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                                {children}
+                              </h4>
+                            ),
+                            p: ({ children }) => (
+                              <p className="text-gray-700 leading-relaxed mb-4 text-base tracking-wide">
+                                {children}
+                              </p>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="space-y-3 mb-6 ml-2">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="space-y-3 mb-6 ml-2 counter-reset-[list-counter]">
+                                {children}
+                              </ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="flex items-start gap-3 text-gray-700 bg-gray-50/50 p-3 rounded-lg hover:bg-gray-100/50 transition-colors">
+                                <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></span>
+                                <span className="flex-1">{children}</span>
+                              </li>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-bold text-gray-900">
+                                {children}
+                              </strong>
+                            ),
+                            em: ({ children }) => (
+                              <em className="italic text-blue-600 font-medium">
+                                {children}
+                              </em>
+                            ),
+                            blockquote: ({ children }) => (
+                              <blockquote className="relative border-l-4 border-green-400 bg-gradient-to-r from-green-50 to-yellow-50 pl-6 pr-4 py-4 italic text-gray-700 my-6 rounded-r-lg shadow-sm">
+                                <div className="absolute top-2 left-2 text-green-500 text-2xl opacity-50">"</div>
+                                {children}
+                              </blockquote>
+                            ),
+                            code: ({ children }) => (
+                              <code className="bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-1 rounded-md text-sm font-mono text-gray-800 border border-gray-300">
+                                {children}
+                              </code>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 p-6 rounded-xl overflow-x-auto text-sm border border-gray-700 shadow-lg my-6">
+                                {children}
+                              </pre>
+                            ),
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto my-6 rounded-lg shadow-sm border border-gray-200">
+                                <table className="w-full bg-white">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                                {children}
+                              </thead>
+                            ),
+                            tbody: ({ children }) => (
+                              <tbody className="divide-y divide-gray-200">
+                                {children}
+                              </tbody>
+                            ),
+                            tr: ({ children }) => (
+                              <tr className="hover:bg-gray-50 transition-colors">
+                                {children}
+                              </tr>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="px-6 py-4 text-sm text-gray-700 border-b border-gray-100">
+                                {children}
+                              </td>
+                            ),
+                            hr: () => (
+                              <div className="my-8 flex items-center justify-center">
+                                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                                <div className="mx-4 w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                              </div>
+                            ),
+                            a: ({ children, href }) => (
+                              <a 
+                                href={href} 
+                                className="text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-500 transition-colors font-medium"
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                {children}
+                              </a>
+                            )
                           }}
                         >
                           {response.answer}
@@ -576,6 +756,217 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
           
           </div> {/* End of main content */}
         </div> {/* End of grid */}
+
+        {/* Fullscreen Modal */}
+        <FullscreenModal>
+          {response && (
+            <div className="space-y-6">
+              {/* Header with Metadata - Enhanced Streamlit Style */}
+              <div className="bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 p-6 rounded-xl border-2 border-green-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <h3 className="text-xl font-bold text-green-900">🌍 AI Travel Plan</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-600">Generated:</span>
+                    <span className="text-gray-800">
+                      {requestTimestamp ? requestTimestamp.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) : 'N/A'}
+                    </span>
+                    <span className="text-gray-600 text-xs">
+                      at {requestTimestamp ? requestTimestamp.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-600">Processing Time:</span>
+                    <span className="text-gray-800">
+                      {processingTime ? `${(processingTime / 1000).toFixed(1)}s` : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-600">Created by:</span>
+                    <span className="text-gray-800">AI Travel Agent</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-green-300">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-600 mb-2">Your Query:</span>
+                    <div className="bg-white p-3 rounded-lg border italic text-gray-700">
+                      "{response.query || query}"
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Markdown Rendered Content */}
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-6">
+                  <div className="prose prose-lg prose-slate max-w-none markdown-content relative">
+                    {/* Decorative background pattern */}
+                    <div className="absolute inset-0 opacity-5 pointer-events-none">
+                      <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full blur-3xl"></div>
+                      <div className="absolute bottom-4 left-4 w-24 h-24 bg-gradient-to-br from-green-200 to-blue-200 rounded-full blur-2xl"></div>
+                    </div>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeHighlight]}
+                      components={{
+                        h1: ({ children }) => (
+                          <div className="relative mb-8 mt-6">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl"></div>
+                            <h1 className="relative text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent p-6 text-center">
+                              {children}
+                            </h1>
+                          </div>
+                        ),
+                        h2: ({ children }) => (
+                          <div className="flex items-center gap-3 mb-6 mt-10">
+                            <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                            <h2 className="text-2xl font-bold text-gray-800 flex-1 border-b border-gray-200 pb-2">
+                              {children}
+                            </h2>
+                            <div className="w-12 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+                          </div>
+                        ),
+                        h3: ({ children }) => (
+                          <div className="flex items-center gap-2 mb-4 mt-8">
+                            <div className="w-1.5 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                            <h3 className="text-xl font-semibold text-gray-700 bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-lg flex-1">
+                              {children}
+                            </h3>
+                          </div>
+                        ),
+                        h4: ({ children }) => (
+                          <h4 className="text-lg font-semibold text-gray-600 mb-3 mt-6 flex items-center gap-2">
+                            <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                            {children}
+                          </h4>
+                        ),
+                        p: ({ children }) => (
+                          <p className="text-gray-700 leading-relaxed mb-4 text-base tracking-wide">
+                            {children}
+                          </p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="space-y-3 mb-6 ml-2">
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="space-y-3 mb-6 ml-2 counter-reset-[list-counter]">
+                            {children}
+                          </ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="flex items-start gap-3 text-gray-700 bg-gray-50/50 p-3 rounded-lg hover:bg-gray-100/50 transition-colors">
+                            <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></span>
+                            <span className="flex-1">{children}</span>
+                          </li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-bold text-gray-900">
+                            {children}
+                          </strong>
+                        ),
+                        em: ({ children }) => (
+                          <em className="italic text-blue-600 font-medium">
+                            {children}
+                          </em>
+                        ),
+                        blockquote: ({ children }) => (
+                          <blockquote className="relative border-l-4 border-green-400 bg-gradient-to-r from-green-50 to-yellow-50 pl-6 pr-4 py-4 italic text-gray-700 my-6 rounded-r-lg shadow-sm">
+                            <div className="absolute top-2 left-2 text-green-500 text-2xl opacity-50">"</div>
+                            {children}
+                          </blockquote>
+                        ),
+                        code: ({ children }) => (
+                          <code className="bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-1 rounded-md text-sm font-mono text-gray-800 border border-gray-300">
+                            {children}
+                          </code>
+                        ),
+                        pre: ({ children }) => (
+                          <pre className="bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 p-6 rounded-xl overflow-x-auto text-sm border border-gray-700 shadow-lg my-6">
+                            {children}
+                          </pre>
+                        ),
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-6 rounded-lg shadow-sm border border-gray-200">
+                            <table className="w-full bg-white">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        thead: ({ children }) => (
+                          <thead className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                            {children}
+                          </thead>
+                        ),
+                        tbody: ({ children }) => (
+                          <tbody className="divide-y divide-gray-200">
+                            {children}
+                          </tbody>
+                        ),
+                        tr: ({ children }) => (
+                          <tr className="hover:bg-gray-50 transition-colors">
+                            {children}
+                          </tr>
+                        ),
+                        th: ({ children }) => (
+                          <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
+                            {children}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="px-6 py-4 text-sm text-gray-700 border-b border-gray-100">
+                            {children}
+                          </td>
+                        ),
+                        hr: () => (
+                          <div className="my-8 flex items-center justify-center">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                            <div className="mx-4 w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                          </div>
+                        ),
+                        a: ({ children, href }) => (
+                          <a 
+                            href={href} 
+                            className="text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-500 transition-colors font-medium"
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            {children}
+                          </a>
+                        )
+                      }}
+                    >
+                      {response.answer}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Disclaimer */}
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <AlertDescription className="text-yellow-800">
+                  ⚠️ <strong>Important:</strong> This travel plan was generated by AI. Please verify all information, 
+                  especially prices, operating hours, and travel requirements before your trip.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+        </FullscreenModal>
       </div> {/* End of max-w-7xl container */}
     </section>
   );
