@@ -192,7 +192,7 @@ graph TB
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/AI_Trip_Planner.git
+git clone https://github.com/aveera04/AI_Trip_Planner.git
 cd AI_Trip_Planner
 ```
 
@@ -547,8 +547,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support, please:
 1. Check the [documentation](README.md)
-2. Search [existing issues](https://github.com/your-username/AI_Trip_Planner/issues)
-3. Create a [new issue](https://github.com/your-username/AI_Trip_Planner/issues/new)
+2. Search [existing issues](https://github.com/aveera04/AI_Trip_Planner/issues)
+3. Create a [new issue](https://github.com/aveera04/AI_Trip_Planner/issues/new)
 
 ---
 

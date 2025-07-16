@@ -15,7 +15,7 @@ Before starting, ensure you have:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/AI_Trip_Planner.git
+git clone https://github.com/aveera04/AI_Trip_Planner_fork.git
 cd AI_Trip_Planner
 
 # Create and activate virtual environment

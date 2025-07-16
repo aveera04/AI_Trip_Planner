@@ -61,10 +61,10 @@ deployment = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-username/AI_Trip_Planner"
-Repository = "https://github.com/your-username/AI_Trip_Planner"
-Documentation = "https://github.com/your-username/AI_Trip_Planner/blob/main/README.md"
-Issues = "https://github.com/your-username/AI_Trip_Planner/issues"
+Homepage = "https://github.com/aveera04/AI_Trip_Planner"
+Repository = "https://github.com/aveera04/AI_Trip_Planner"
+Documentation = "https://github.com/aveera04/AI_Trip_Planner/blob/main/README.md"
+Issues = "https://github.com/aveera04/AI_Trip_Planner/issues"
 
 [project.scripts]
 ai-trip-planner = "main:app"

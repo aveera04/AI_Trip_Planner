@@ -38,7 +38,7 @@ State Management   Request Handling      Agent Workflow          Currency APIs
 ### Environment Setup
 ```bash
 # Clone repository
-git clone https://github.com/your-username/AI_Trip_Planner.git
+git clone https://github.com/aveera04/AI_Trip_Planner_fork.git
 cd AI_Trip_Planner
 
 # Setup Python environment
