@@ -1,20 +1,25 @@
-langchain
-langchain-community
-langchain-experimental
-fastapi
-python-dotenv
-streamlit
-uvicorn
-pydantic
-httpx
-requests
-langchain_google_community
-langchain_tavily
-langchain_groq
-langchain_openai
-langgraph
-langchain-google-community[places]
+# Core Framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
 
+# AI/ML Dependencies
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-experimental>=0.0.50
+langgraph>=0.0.30
+langchain-groq>=0.0.1
+langchain-openai>=0.0.8
+langchain-tavily>=0.0.1
+langchain-google-community[places]>=1.0.0
 
+# HTTP and Environment
+python-dotenv>=1.0.0
+httpx>=0.24.0
+requests>=2.31.0
 
+# Configuration
+PyYAML>=6.0.1
+
+# Development
 -e .

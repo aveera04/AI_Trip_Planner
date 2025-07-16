@@ -15,6 +15,8 @@ import { apiService, type TravelPlanResponse } from "@/services/api";
 import { useQueryHistory } from "@/hooks/useQueryHistory";
 import QueryHistory from "@/components/travel/QueryHistory";
 import ExportMenu from "@/components/travel/ExportMenu";
+import RateLimitDialog from "@/components/travel/RateLimitDialog";
+import { hasRemainingQueries, recordQueryUsage } from "@/lib/quota";
 import "highlight.js/styles/github.css"; // Import highlight.js theme
 
 interface TravelPlannerFormProps {
@@ -34,6 +36,7 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
   const [loadingMessage, setLoadingMessage] = useState("Planning your perfect trip...");
   const [currentQueryId, setCurrentQueryId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
   const { toast } = useToast();
   const { addQuery, updateQueryResponse } = useQueryHistory();
 
@@ -157,6 +160,12 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
       return;
     }
 
+    // Check daily quota before processing
+    if (!hasRemainingQueries()) {
+      setShowRateLimitDialog(true);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setResponse(null);
@@ -184,6 +193,9 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
       const duration = endTime.getTime() - startTime.getTime();
       setProcessingTime(duration);
       setResponse(data);
+
+      // Record successful query usage
+      recordQueryUsage();
 
       // Update history with response
       updateQueryResponse(queryId, {
@@ -967,6 +979,12 @@ const TravelPlannerForm = ({ initialQuery = "", autoSubmit = false, onQueryProce
             </div>
           )}
         </FullscreenModal>
+        
+        {/* Rate Limit Dialog */}
+        <RateLimitDialog 
+          isOpen={showRateLimitDialog} 
+          onClose={() => setShowRateLimitDialog(false)} 
+        />
       </div> {/* End of max-w-7xl container */}
     </section>
   );

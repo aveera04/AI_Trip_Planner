@@ -1,9 +1,165 @@
 [project]
 name = "ai-trip-planner"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "AI-powered travel planning application with FastAPI backend and React frontend"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "pandas>=2.3.0",
+authors = [
+    {name = "Abir Chowdhury", email = "abirc.2101@gmail.com"}
 ]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["ai", "travel", "planning", "fastapi", "react", "langchain"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.0.0",
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.10",
+    "langchain-experimental>=0.0.50",
+    "langgraph>=0.0.30",
+    "langchain-groq>=0.0.1",
+    "langchain-openai>=0.0.8",
+    "langchain-tavily>=0.0.1",
+    "langchain-google-community[places]>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.24.0",
+    "requests>=2.31.0",
+    "PyYAML>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocs-swagger-ui-tag>=0.6.0",
+]
+deployment = [
+    "gunicorn>=21.0.0",
+    "docker>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-username/AI_Trip_Planner"
+Repository = "https://github.com/your-username/AI_Trip_Planner"
+Documentation = "https://github.com/your-username/AI_Trip_Planner/blob/main/README.md"
+Issues = "https://github.com/your-username/AI_Trip_Planner/issues"
+
+[project.scripts]
+ai-trip-planner = "main:app"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*", "tools*", "utils*", "logger*", "config*", "prompt_library*", "exception*"]
+exclude = ["tests*", "frontend*", "*.tests*", "*.tests.*", "tests.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["agent", "tools", "utils", "logger", "config", "prompt_library", "exception"]
+omit = ["tests/*", "*/tests/*", "*/__pycache__/*", "*/venv/*", "*/.venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | frontend
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.flake8]
+max-line-length = 100
+exclude = [".venv", "venv", "env", "build", "dist", "frontend"]
+ignore = ["E203", "E266", "E501", "W503", "F403", "F401"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+exclude = ["frontend", "venv", ".venv", "build", "dist"]
+
+[[tool.mypy.overrides]]
+module = [
+    "langchain.*",
+    "langgraph.*",
+    "groq.*",
+    "openai.*",
+    "tavily.*",
+]
+ignore_missing_imports = true
