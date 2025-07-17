@@ -43,11 +43,25 @@ async def log_requests(request: Request, call_next):
     
     return response
 
+# CORS configuration - allow multiple origins for development and production
+allowed_origins = [
+    "http://localhost:3000", 
+    "http://localhost:8080", 
+    "http://localhost:8081",
+    "https://mytraveladvisor2025.vercel.app",  # Production Vercel domain
+    "https://ai-trip-planner-f17p.onrender.com",  # Allow backend self-calls
+]
+
+# Add environment variable for additional origins
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:8081"],  # Frontend origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 class QueryRequest(BaseModel):
