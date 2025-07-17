@@ -57,12 +57,17 @@ frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     allowed_origins.append(frontend_url)
 
+# Log the allowed origins for debugging
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 class QueryRequest(BaseModel):
     question: str
@@ -92,6 +97,17 @@ async def api_info():
             "/query": "Generate travel plans"
         },
         "frontend_url": os.getenv("FRONTEND_URL", "http://localhost:8081")
+    }
+
+# Debug endpoint to check CORS configuration
+@app.get("/debug/cors")
+async def debug_cors():
+    logger.info("CORS debug requested")
+    return {
+        "allowed_origins": allowed_origins,
+        "frontend_url_env": os.getenv("FRONTEND_URL"),
+        "cors_configured": True,
+        "timestamp": datetime.datetime.now().isoformat()
     }
 
 @app.post("/query")
